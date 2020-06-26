@@ -21,18 +21,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 
-import org.apache.commons.lang3.StringUtils;
-import org.elasticsearch.common.Strings;
-import org.elasticsearch.common.xcontent.*;
-import org.elasticsearch.search.aggregations.Aggregation;
-import org.elasticsearch.search.aggregations.Aggregations;
-import org.elasticsearch.search.aggregations.InternalMultiBucketAggregation;
-import org.elasticsearch.search.aggregations.bucket.InternalSingleBucketAggregation;
-import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
-import org.elasticsearch.search.aggregations.metrics.InternalNumericMetricsAggregation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +35,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import com.github.wnameless.json.flattener.JsonFlattener;
 
 import org.apache.zeppelin.completer.CompletionType;
@@ -60,6 +47,20 @@ import org.apache.zeppelin.interpreter.Interpreter;
 import org.apache.zeppelin.interpreter.InterpreterContext;
 import org.apache.zeppelin.interpreter.InterpreterResult;
 import org.apache.zeppelin.interpreter.thrift.InterpreterCompletion;
+
+import org.apache.commons.lang3.StringUtils;
+import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.xcontent.ToXContent;
+import org.elasticsearch.common.xcontent.XContentBuilder;
+import org.elasticsearch.common.xcontent.XContentFactory;
+import org.elasticsearch.search.aggregations.Aggregation;
+import org.elasticsearch.search.aggregations.Aggregations;
+import org.elasticsearch.search.aggregations.InternalMultiBucketAggregation;
+import org.elasticsearch.search.aggregations.bucket.InternalSingleBucketAggregation;
+import org.elasticsearch.search.aggregations.bucket.MultiBucketsAggregation;
+import org.elasticsearch.search.aggregations.metrics.InternalNumericMetricsAggregation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Elasticsearch Interpreter for Zeppelin.
@@ -117,8 +118,8 @@ public class ElasticsearchInterpreter extends Interpreter {
       this.resultSize = Integer.parseInt(getProperty(ELASTICSEARCH_RESULT_SIZE));
     } catch (final NumberFormatException e) {
       this.resultSize = 10;
-      logger.error("Unable to parse " + ELASTICSEARCH_RESULT_SIZE + " : " +
-              getProperty(ELASTICSEARCH_RESULT_SIZE), e);
+      logger.error("Unable to parse " + ELASTICSEARCH_RESULT_SIZE + " : "
+              + getProperty(ELASTICSEARCH_RESULT_SIZE), e);
     }
 
     if (StringUtils.isEmpty(clientType) || "http".equals(clientType)) {
@@ -147,7 +148,8 @@ public class ElasticsearchInterpreter extends Interpreter {
 
     if (elsClient == null) {
       return new InterpreterResult(InterpreterResult.Code.ERROR,
-              "Problem with the Elasticsearch client, please check your configuration (host, port,...)");
+              "Problem with the Elasticsearch client, please check your configuration "
+                      + "(host, port,...)");
     }
 
     String[] items = StringUtils.split(cmd.trim(), " ", 3);
@@ -344,8 +346,8 @@ public class ElasticsearchInterpreter extends Interpreter {
     final ActionResponse response = searchData(urlItems, data, size);
 
     addAngularObject(interpreterContext, "search",
-            (response.getAggregations() != null && response.getAggregations().size() > 0) ?
-                    response.getAggregations() : response.getHits());
+            (response.getAggregations() != null && response.getAggregations().size() > 0)
+                    ? response.getAggregations() : response.getHits());
 
     return buildResponseMessage(response);
   }
@@ -426,7 +428,7 @@ public class ElasticsearchInterpreter extends Interpreter {
         InternalNumericMetricsAggregation tempAgg = (InternalNumericMetricsAggregation) agg;
         tempAgg.toXContent(builder, ToXContent.EMPTY_PARAMS);
         resMsg = Strings.toString(builder);
-      }catch (IOException e){
+      } catch (IOException e) {
         logger.error("Processing bucket: " + e.getMessage(), e);
       }
     } else if (agg instanceof InternalSingleBucketAggregation) {
@@ -435,7 +437,7 @@ public class ElasticsearchInterpreter extends Interpreter {
         InternalSingleBucketAggregation tempAgg = (InternalSingleBucketAggregation) agg;
         tempAgg.toXContent(builder, ToXContent.EMPTY_PARAMS);
         resMsg = Strings.toString(builder);
-      }catch (IOException e){
+      } catch (IOException e) {
         logger.error("Processing bucket: " + e.getMessage(), e);
       }
     } else if (agg instanceof InternalMultiBucketAggregation) {
@@ -480,7 +482,6 @@ public class ElasticsearchInterpreter extends Interpreter {
 
   private InterpreterResult buildAggResponseMessage(List<AggWrapper> aggregations) {
     final InterpreterResult.Type resType = InterpreterResult.Type.TABLE;
-    String resMsg = "";
 
     final Set<String> headerKeys = new HashSet<>();
     final List<Map<String, Object>> buckets = new LinkedList<>();
@@ -507,7 +508,7 @@ public class ElasticsearchInterpreter extends Interpreter {
       buffer.deleteCharAt(buffer.length() - 1);
     }
 
-    resMsg = buffer.toString();
+    String resMsg = buffer.toString();
 
     return new InterpreterResult(InterpreterResult.Code.SUCCESS, resType, resMsg);
   }
