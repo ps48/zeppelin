@@ -35,7 +35,7 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.LongField;
+import org.apache.lucene.document.LongPoint;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
@@ -94,7 +94,7 @@ public class LuceneSearch extends SearchService {
         logger.info("Use {} for storing lucene search index", this.indexPath);
       } catch (IOException e) {
         throw new RuntimeException(
-            "Failed to create index directory for search service. Use memory instead", e);
+                "Failed to create index directory for search service. Use memory instead", e);
       }
     } else {
       this.indexDirectory = new RAMDirectory();
@@ -115,14 +115,14 @@ public class LuceneSearch extends SearchService {
   public List<Map<String, String>> query(String queryStr) {
     if (null == indexDirectory) {
       throw new IllegalStateException(
-          "Something went wrong on instance creation time, index dir is null");
+              "Something went wrong on instance creation time, index dir is null");
     }
     List<Map<String, String>> result = Collections.emptyList();
     try (IndexReader indexReader = DirectoryReader.open(indexDirectory)) {
       IndexSearcher indexSearcher = new IndexSearcher(indexReader);
       Analyzer analyzer = new StandardAnalyzer();
       MultiFieldQueryParser parser =
-          new MultiFieldQueryParser(new String[] {SEARCH_FIELD_TEXT, SEARCH_FIELD_TITLE}, analyzer);
+              new MultiFieldQueryParser(new String[] {SEARCH_FIELD_TEXT, SEARCH_FIELD_TITLE}, analyzer);
 
       Query query = parser.parse(queryStr);
       logger.debug("Searching for: " + query.toString(SEARCH_FIELD_TEXT));
@@ -140,7 +140,7 @@ public class LuceneSearch extends SearchService {
   }
 
   private List<Map<String, String>> doSearch(
-      IndexSearcher searcher, Query query, Analyzer analyzer, Highlighter highlighter) {
+          IndexSearcher searcher, Query query, Analyzer analyzer, Highlighter highlighter) {
     List<Map<String, String>> matchingParagraphs = Lists.newArrayList();
     ScoreDoc[] hits;
     try {
@@ -164,8 +164,8 @@ public class LuceneSearch extends SearchService {
 
           if (text != null) {
             TokenStream tokenStream =
-                TokenSources.getTokenStream(
-                    searcher.getIndexReader(), id, SEARCH_FIELD_TEXT, analyzer);
+                    TokenSources.getTokenStream(
+                            searcher.getIndexReader(), id, SEARCH_FIELD_TEXT, analyzer);
             TextFragment[] frag = highlighter.getBestTextFragments(tokenStream, text, true, 3);
             logger.debug("    {} fragments found for query '{}'", frag.length, query);
             for (int j = 0; j < frag.length; j++) {
@@ -178,17 +178,17 @@ public class LuceneSearch extends SearchService {
 
           if (header != null) {
             TokenStream tokenTitle =
-                TokenSources.getTokenStream(
-                    searcher.getIndexReader(), id, SEARCH_FIELD_TITLE, analyzer);
+                    TokenSources.getTokenStream(
+                            searcher.getIndexReader(), id, SEARCH_FIELD_TITLE, analyzer);
             TextFragment[] frgTitle = highlighter.getBestTextFragments(tokenTitle, header, true, 3);
             header = (frgTitle != null && frgTitle.length > 0) ? frgTitle[0].toString() : "";
           } else {
             header = "";
           }
           matchingParagraphs.add(
-              ImmutableMap.of(
-                  "id", path, // <noteId>/paragraph/<paragraphId>
-                  "name", title, "snippet", fragment, "text", text, "header", header));
+                  ImmutableMap.of(
+                          "id", path, // <noteId>/paragraph/<paragraphId>
+                          "name", title, "snippet", fragment, "text", text, "header", header));
         } else {
           logger.info("{}. No {} for this document", i + 1, ID_FIELD);
         }
@@ -292,7 +292,7 @@ public class LuceneSearch extends SearchService {
         doc.add(new TextField(SEARCH_FIELD_TITLE, p.getTitle(), Field.Store.YES));
       }
       Date date = p.getDateStarted() != null ? p.getDateStarted() : p.getDateCreated();
-      doc.add(new LongField("modified", date.getTime(), Field.Store.NO));
+      doc.add(new LongPoint("modified", date.getTime()));
     } else {
       doc.add(new TextField(SEARCH_FIELD_TEXT, noteName, Field.Store.YES));
     }
@@ -321,9 +321,9 @@ public class LuceneSearch extends SearchService {
       }
       long end = System.nanoTime();
       logger.info(
-          "Indexing {} notebooks took {}ms",
-          docsIndexed,
-          TimeUnit.NANOSECONDS.toMillis(end - start));
+              "Indexing {} notebooks took {}ms",
+              docsIndexed,
+              TimeUnit.NANOSECONDS.toMillis(end - start));
     }
   }
 
@@ -376,14 +376,14 @@ public class LuceneSearch extends SearchService {
 
   private void deleteDoc(String noteId, Paragraph p) {
     String fullNoteOrJustParagraph = formatDeleteId(noteId, p);
-    logger.debug("Deleting note {}, out of: {}", noteId, indexWriter.numDocs());
+    logger.debug("Deleting note {}, out of: {}", noteId, indexWriter.getDocStats());
     try {
       indexWriter.deleteDocuments(new WildcardQuery(new Term(ID_FIELD, fullNoteOrJustParagraph)));
       indexWriter.commit();
     } catch (IOException e) {
       logger.error("Failed to delete {} from index by '{}'", noteId, fullNoteOrJustParagraph, e);
     }
-    logger.debug("Done, index contains {} docs now" + indexWriter.numDocs());
+    logger.debug("Done, index contains {} docs now" + indexWriter.getDocStats());
   }
 
   /* (non-Javadoc)
@@ -414,7 +414,7 @@ public class LuceneSearch extends SearchService {
 
   /** Indexes a single document: - code of the paragraph (if non-null) - or just a note name */
   private void indexDoc(IndexWriter w, String noteId, String noteName, Paragraph p)
-      throws IOException {
+          throws IOException {
     String id = formatId(noteId, p);
     Document doc = newDocument(id, noteName, p);
     w.addDocument(doc);
