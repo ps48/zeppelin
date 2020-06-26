@@ -22,16 +22,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 
-import org.apache.commons.lang3.StringUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
@@ -39,12 +29,22 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.HttpRequest;
 import com.mashape.unirest.request.HttpRequestWithBody;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+
 import org.apache.zeppelin.elasticsearch.ElasticsearchInterpreter;
 import org.apache.zeppelin.elasticsearch.action.ActionException;
 import org.apache.zeppelin.elasticsearch.action.ActionResponse;
 import org.apache.zeppelin.elasticsearch.action.AggWrapper;
 import org.apache.zeppelin.elasticsearch.action.AggWrapper.AggregationType;
 import org.apache.zeppelin.elasticsearch.action.HitWrapper;
+
+import org.apache.commons.lang3.StringUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * Elasticsearch client using the HTTP API.
@@ -339,9 +339,9 @@ public class HttpBasedClient implements ElasticsearchClient {
   }
 
   private boolean containsAggs(HttpResponse<JsonNode> result) {
-    return result.getBody() != null &&
-        (result.getBody().getObject().has("aggregations") ||
-            result.getBody().getObject().has("aggs"));
+    return result.getBody() != null
+            && (result.getBody().getObject().has("aggregations")
+            || result.getBody().getObject().has("aggs"));
   }
 
   @Override

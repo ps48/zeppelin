@@ -23,10 +23,12 @@ import static org.junit.Assert.assertNotNull;
 
 import org.apache.commons.lang3.RandomUtils;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
+import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.env.Environment;
+import org.elasticsearch.monitor.fs.FsInfo;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.node.NodeBuilder;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -36,6 +38,7 @@ import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -72,7 +75,8 @@ public class ElasticsearchInterpreterTest {
 
   @BeforeClass
   public static void populate() throws IOException {
-    final Settings settings = Settings.settingsBuilder()
+
+    final Settings settings = Settings.builder()
             .put("cluster.name", ELS_CLUSTER_NAME)
             .put("network.host", ELS_HOST)
             .put("http.port", ELS_HTTP_PORT)
@@ -80,7 +84,8 @@ public class ElasticsearchInterpreterTest {
             .put("path.home", ELS_PATH)
             .build();
 
-    elsNode = NodeBuilder.nodeBuilder().settings(settings).node();
+  final Environment env = new Environment(settings, (Path) FsInfo.Path.EMPTY_PARAMS);
+    elsNode =  new Node(env);
     elsClient = elsNode.client();
 
     elsClient.admin().indices().prepareCreate("logs")
@@ -93,7 +98,7 @@ public class ElasticsearchInterpreterTest {
 
     for (int i = 0; i < 48; i++) {
       elsClient.prepareIndex("logs", "http", "" + i)
-        .setRefresh(true)
+        .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
         .setSource(jsonBuilder()
           .startObject()
             .field("date", new Date())
@@ -110,7 +115,7 @@ public class ElasticsearchInterpreterTest {
 
     for (int i = 1; i < 3; i++) {
       elsClient.prepareIndex("logs", "http", "very/strange/id#" + i)
-        .setRefresh(true)
+              .setRefreshPolicy(WriteRequest.RefreshPolicy.IMMEDIATE)
         .setSource(jsonBuilder()
             .startObject()
               .field("date", new Date())
@@ -141,7 +146,7 @@ public class ElasticsearchInterpreterTest {
   }
 
   @AfterClass
-  public static void clean() {
+  public static void clean() throws IOException {
     if (transportInterpreter != null) {
       transportInterpreter.close();
     }
