@@ -84,7 +84,7 @@ public class ElasticsearchInterpreterTest {
             .put("path.home", ELS_PATH)
             .build();
 
-  final Environment env = new Environment(settings, (Path) FsInfo.Path.EMPTY_PARAMS);
+    final Environment env = new Environment(settings, (Path) FsInfo.Path.EMPTY_PARAMS);
     elsNode =  new Node(env);
     elsClient = elsNode.client();
 
