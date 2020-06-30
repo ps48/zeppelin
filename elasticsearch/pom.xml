@@ -35,13 +35,14 @@
   <properties>
     <interpreter.name>elasticsearch</interpreter.name>
     <elasticsearch.version>7.8.0</elasticsearch.version>
-    <httpasyncclient.version>4.0.2</httpasyncclient.version>
+    <httpasyncclient.version>4.1.4</httpasyncclient.version>
     <guava.version>18.0</guava.version>
     <json-flattener.version>0.1.6</json-flattener.version>
     <unirest.version>1.4.9</unirest.version>
   </properties>
 
   <dependencies>
+
     <dependency>
       <groupId>org.elasticsearch</groupId>
       <artifactId>elasticsearch</artifactId>
@@ -58,11 +59,11 @@
       <artifactId>commons-lang3</artifactId>
     </dependency>
 
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpasyncclient</artifactId>
-      <version>${httpasyncclient.version}</version>
-    </dependency>
+<!--    <dependency>-->
+<!--      <groupId>org.apache.httpcomponents</groupId>-->
+<!--      <artifactId>httpcore</artifactId>-->
+<!--      <version>4.4.11</version>-->
+<!--    </dependency>-->
 
     <dependency>
       <groupId>com.google.guava</groupId>
