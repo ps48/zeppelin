@@ -77,6 +77,7 @@ public class ODFENotebookRepo implements NotebookRepo {
     }
 
     private RestHighLevelClient client() {
+//        System.setProperty("javax.net.ssl.trustStore", "/Users/sgguruda/work/opendistroforelasticsearch-1.8.0/config/keystore.jks");
         final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
         credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(user, password));
 
