@@ -17,6 +17,8 @@
 
 package org.apache.zeppelin.notebook.repo;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -27,6 +29,7 @@ import org.apache.zeppelin.conf.ZeppelinConfiguration;
 import org.apache.zeppelin.notebook.Note;
 import org.apache.zeppelin.notebook.NoteInfo;
 import org.apache.zeppelin.user.AuthenticationInfo;
+import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.DocWriteResponse;
 import org.elasticsearch.action.delete.DeleteRequest;
 import org.elasticsearch.action.delete.DeleteResponse;
@@ -40,6 +43,8 @@ import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.indices.CreateIndexRequest;
+import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
@@ -69,7 +74,7 @@ public class ODFENotebookRepo implements NotebookRepo {
     private String host;
     private Integer port;
     private String protocol;
-    private String rootIndex = "notebooks";
+    private String rootIndex = ".notebooks";
     private ZeppelinConfiguration conf;
 
     public ODFENotebookRepo() {
@@ -92,6 +97,17 @@ public class ODFENotebookRepo implements NotebookRepo {
         return client;
     }
 
+    private void CreateNotebooksIndex() throws IOException {
+        CreateIndexRequest request = new CreateIndexRequest(rootIndex);
+        try {
+            CreateIndexResponse createIndexResponse = ESclient.indices().create(request, RequestOptions.DEFAULT);
+        } catch (ElasticsearchStatusException e) {
+            if (!e.getMessage().contains("resource_already_exists_exception")) {
+                throw e;
+            }
+        }
+    }
+
     @Override
     public void init(ZeppelinConfiguration conf) throws IOException {
         this.conf = conf;
@@ -101,6 +117,7 @@ public class ODFENotebookRepo implements NotebookRepo {
         port = 9200;
         protocol = "http";
         ESclient = client();
+        CreateNotebooksIndex();
     }
 
 
@@ -114,11 +131,14 @@ public class ODFENotebookRepo implements NotebookRepo {
         SearchResponse searchResponse = ESclient.search(searchRequest, RequestOptions.DEFAULT);
 
         SearchHits hits = searchResponse.getHits();
-        SearchHit[] searchHits = hits.getHits();
-        for (SearchHit hit : searchHits) {
-            Map<String, Object> noteJson = hit.getSourceAsMap();
-            NoteInfo noteInfo = new NoteInfo(noteJson.get("id").toString(), noteJson.get("path").toString());
-            notesInfo.put(noteJson.get("id").toString(), noteInfo);
+
+        if (hits.getHits().length>0) {
+            SearchHit[] searchHits = hits.getHits();
+            for (SearchHit hit : searchHits) {
+                Map<String, Object> noteJson = hit.getSourceAsMap();
+                NoteInfo noteInfo = new NoteInfo(noteJson.get("id").toString(), noteJson.get("path").toString());
+                notesInfo.put(noteJson.get("id").toString(), noteInfo);
+            }
         }
         return notesInfo;
     }
@@ -138,13 +158,18 @@ public class ODFENotebookRepo implements NotebookRepo {
 
     @Override
     public void save(Note note, AuthenticationInfo subject) throws IOException {
-        String json = note.toJson();
+        // TODO: Other NotebookRepos deal with File paths as a separate kept entity
+        // They don't store path in the notebook itself
+        // Here, we merge path as a notebook property
+        // In the later release we need to decouple this to support folder structures
+
+        JsonObject json = new JsonParser().parse(note.toJson()).getAsJsonObject();
+        json.addProperty("path",note.getPath());
         try {
             IndexRequest request = new IndexRequest(rootIndex);
             request.id(note.getId());
-            request.source(json, XContentType.JSON);
+            request.source(json.toString(), XContentType.JSON);
             IndexResponse indexResponse = ESclient.index(request, RequestOptions.DEFAULT);
-            System.out.println(indexResponse.toString());
         } catch (IOException e) {
             throw new IOException("Fail to store note: " + note.getPath() + " in ODFE", e);
         }
@@ -153,35 +178,11 @@ public class ODFENotebookRepo implements NotebookRepo {
     @Override
     public void move(String noteId, String notePath, String newNotePath,
                      AuthenticationInfo subject) throws IOException {
-//    String key = rootFolder + "/" + buildNoteFileName(noteId, notePath);
-//    String newKey = rootFolder + "/" + buildNoteFileName(noteId, newNotePath);
-//    s3client.copyObject(bucketName, key, bucketName, newKey);
-//    s3client.deleteObject(bucketName, key);
         LOGGER.warn("Method not implemented");
     }
 
     @Override
     public void move(String folderPath, String newFolderPath, AuthenticationInfo subject) throws IOException {
-//    try {
-//      ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
-//              .withBucketName(bucketName)
-//              .withPrefix(rootFolder + folderPath + "/");
-//      ObjectListing objectListing;
-//      do {
-//        objectListing = s3client.listObjects(listObjectsRequest);
-//        for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
-//          if (objectSummary.getKey().endsWith(".zpln")) {
-//            String noteId = getNoteId(objectSummary.getKey());
-//            String notePath = getNotePath(rootFolder, objectSummary.getKey());
-//            String newNotePath = newFolderPath + notePath.substring(folderPath.length());
-//            move(noteId, notePath, newNotePath, subject);
-//          }
-//        }
-//        listObjectsRequest.setMarker(objectListing.getNextMarker());
-//      } while (objectListing.isTruncated());
-//    } catch (AmazonClientException ace) {
-//      throw new IOException("Fail to move folder: " + folderPath + " to " + newFolderPath  + " in S3" , ace);
-//    }
         LOGGER.warn("Method not implemented");
     }
 
@@ -199,20 +200,6 @@ public class ODFENotebookRepo implements NotebookRepo {
 
     @Override
     public void remove(String folderPath, AuthenticationInfo subject) throws IOException {
-
-//    final ListObjectsRequest listObjectsRequest = new ListObjectsRequest()
-//            .withBucketName(bucketName).withPrefix(rootFolder + folderPath + "/");
-//    try {
-//      ObjectListing objects = s3client.listObjects(listObjectsRequest);
-//      do {
-//        for (S3ObjectSummary objectSummary : objects.getObjectSummaries()) {
-//          s3client.deleteObject(bucketName, objectSummary.getKey());
-//        }
-//        objects = s3client.listNextBatchOfObjects(objects);
-//      } while (objects.isTruncated());
-//    } catch (AmazonClientException ace) {
-//      throw new IOException("Unable to remove folder " + folderPath  + " in S3", ace);
-//    }
         LOGGER.warn("Method not implemented");
     }
 
