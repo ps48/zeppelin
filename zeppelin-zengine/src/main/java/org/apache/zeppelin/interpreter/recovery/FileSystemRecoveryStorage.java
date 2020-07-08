@@ -17,16 +17,21 @@
 
 package org.apache.zeppelin.interpreter.recovery;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.zeppelin.conf.ZeppelinConfiguration;
 import org.apache.zeppelin.interpreter.InterpreterSetting;
 import org.apache.zeppelin.interpreter.InterpreterSettingManager;
+import org.apache.zeppelin.interpreter.ManagedInterpreterGroup;
 import org.apache.zeppelin.interpreter.launcher.InterpreterClient;
+import org.apache.zeppelin.interpreter.remote.RemoteInterpreterProcess;
+import org.apache.zeppelin.interpreter.remote.RemoteInterpreterRunningProcess;
 import org.apache.zeppelin.notebook.FileSystemStorage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,10 +79,20 @@ public class FileSystemRecoveryStorage extends RecoveryStorage {
   private void save(String interpreterSettingName) throws IOException {
     InterpreterSetting interpreterSetting =
         interpreterSettingManager.getInterpreterSettingByName(interpreterSettingName);
-    String recoveryData = RecoveryUtils.getRecoveryData(interpreterSetting);
-    LOGGER.debug("Updating recovery data of {}: {}", interpreterSettingName, recoveryData);
+    List<String> recoveryContent = new ArrayList<>();
+    if (interpreterSetting != null) {
+      for (ManagedInterpreterGroup interpreterGroup : interpreterSetting.getAllInterpreterGroups()) {
+        RemoteInterpreterProcess interpreterProcess = interpreterGroup.getInterpreterProcess();
+        if (interpreterProcess != null && interpreterProcess.isRunning()) {
+          recoveryContent.add(interpreterGroup.getId() + "\t" + interpreterProcess.getHost() + ":" +
+                  interpreterProcess.getPort());
+        }
+      }
+    }
+    String recoveryContentStr = StringUtils.join(recoveryContent, System.lineSeparator());
+    LOGGER.debug("Updating recovery data of {}: {}", interpreterSettingName, recoveryContentStr);
     Path recoveryFile = new Path(recoveryDir, interpreterSettingName + ".recovery");
-    fs.writeFile(recoveryData, recoveryFile, true);
+    fs.writeFile(recoveryContentStr, recoveryFile, true);
   }
 
   @Override
@@ -90,8 +105,23 @@ public class FileSystemRecoveryStorage extends RecoveryStorage {
       String interpreterSettingName = fileName.substring(0,
           fileName.length() - ".recovery".length());
       String recoveryContent = fs.readFile(path);
-      clients.putAll(RecoveryUtils.restoreFromRecoveryData(
-              recoveryContent, interpreterSettingName, interpreterSettingManager, zConf));
+      if (!StringUtils.isBlank(recoveryContent)) {
+        for (String line : recoveryContent.split(System.lineSeparator())) {
+          String[] tokens = line.split("\t");
+          String interpreterGroupId = tokens[0];
+          String[] hostPort = tokens[1].split(":");
+          int connectTimeout =
+                  zConf.getInt(ZeppelinConfiguration.ConfVars.ZEPPELIN_INTERPRETER_CONNECT_TIMEOUT);
+          RemoteInterpreterRunningProcess client = new RemoteInterpreterRunningProcess(
+              interpreterSettingName, interpreterGroupId, connectTimeout,
+                  interpreterSettingManager.getInterpreterEventServer().getHost(),
+                  interpreterSettingManager.getInterpreterEventServer().getPort(),
+                  hostPort[0], Integer.parseInt(hostPort[1]), true);
+          clients.put(interpreterGroupId, client);
+          LOGGER.info("Recovering Interpreter Process: " + interpreterGroupId + ", " +
+                  hostPort[0] + ":" + hostPort[1]);
+        }
+      }
     }
 
     return clients;
