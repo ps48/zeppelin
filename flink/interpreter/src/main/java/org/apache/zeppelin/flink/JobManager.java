@@ -29,6 +29,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -43,21 +44,18 @@ public class JobManager {
   private ConcurrentHashMap<JobID, FlinkJobProgressPoller> jobProgressPollerMap =
           new ConcurrentHashMap<>();
   private FlinkZeppelinContext z;
-  private String flinkWebUrl;
-  private String replacedFlinkWebUrl;
+  private String flinkWebUI;
 
   public JobManager(FlinkZeppelinContext z,
-                    String flinkWebUrl,
-                    String replacedFlinkWebUrl) {
+                    String flinkWebUI) {
     this.z = z;
-    this.flinkWebUrl = flinkWebUrl;
-    this.replacedFlinkWebUrl = replacedFlinkWebUrl;
+    this.flinkWebUI = flinkWebUI;
   }
 
   public void addJob(InterpreterContext context, JobClient jobClient) {
     String paragraphId = context.getParagraphId();
     JobClient previousJobClient = this.jobs.put(paragraphId, jobClient);
-    FlinkJobProgressPoller thread = new FlinkJobProgressPoller(flinkWebUrl, jobClient.getJobID(), context);
+    FlinkJobProgressPoller thread = new FlinkJobProgressPoller(flinkWebUI, jobClient.getJobID(), context);
     thread.setName("JobProgressPoller-Thread-" + paragraphId);
     thread.start();
     this.jobProgressPollerMap.put(jobClient.getJobID(), thread);
@@ -84,12 +82,7 @@ public class JobManager {
   public void sendFlinkJobUrl(InterpreterContext context) {
     JobClient jobClient = jobs.get(context.getParagraphId());
     if (jobClient != null) {
-      String jobUrl = null;
-      if (replacedFlinkWebUrl != null) {
-        jobUrl = replacedFlinkWebUrl + "#/job/" + jobClient.getJobID();
-      } else {
-        jobUrl = flinkWebUrl + "#/job/" + jobClient.getJobID();
-      }
+      String jobUrl = flinkWebUI + "#/job/" + jobClient.getJobID();
       Map<String, String> infos = new HashMap<>();
       infos.put("jobUrl", jobUrl);
       infos.put("label", "FLINK JOB");
@@ -169,7 +162,7 @@ public class JobManager {
 
   class FlinkJobProgressPoller extends Thread {
 
-    private String flinkWebUrl;
+    private String flinkWebUI;
     private JobID jobId;
     private InterpreterContext context;
     private boolean isStreamingInsertInto;
@@ -177,8 +170,8 @@ public class JobManager {
     private AtomicBoolean running = new AtomicBoolean(true);
     private boolean isFirstPoll = true;
 
-    FlinkJobProgressPoller(String flinkWebUrl, JobID jobId, InterpreterContext context) {
-      this.flinkWebUrl = flinkWebUrl;
+    FlinkJobProgressPoller(String flinkWebUI, JobID jobId, InterpreterContext context) {
+      this.flinkWebUI = flinkWebUI;
       this.jobId = jobId;
       this.context = context;
       this.isStreamingInsertInto = context.getLocalProperties().containsKey("flink.streaming.insert_into");
@@ -192,7 +185,7 @@ public class JobManager {
           synchronized (running) {
             running.wait(1000);
           }
-          rootNode = Unirest.get(flinkWebUrl + "/jobs/" + jobId.toString())
+          rootNode = Unirest.get(flinkWebUI + "/jobs/" + jobId.toString())
                   .asJson().getBody();
           JSONArray vertices = rootNode.getObject().getJSONArray("vertices");
           int totalTasks = 0;

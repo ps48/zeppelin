@@ -102,7 +102,6 @@ class FlinkScalaInterpreter(val properties: Properties) {
   private var flinkVersion: FlinkVersion = _
   private var flinkShims: FlinkShims = _
   private var jmWebUrl: String = _
-  private var replacedJMWebUrl: String = _
   private var jobManager: JobManager = _
   private var defaultParallelism = 1
   private var defaultSqlParallelism = 1
@@ -121,7 +120,7 @@ class FlinkScalaInterpreter(val properties: Properties) {
     modifiers.add("@transient")
     this.bind("z", z.getClass().getCanonicalName(), z, modifiers);
 
-    this.jobManager = new JobManager(this.z, jmWebUrl, replacedJMWebUrl)
+    this.jobManager = new JobManager(this.z, jmWebUrl)
 
     // register JobListener
     val jobListener = new FlinkJobListener()
@@ -269,7 +268,7 @@ class FlinkScalaInterpreter(val properties: Properties) {
               // for some cloud vender, the yarn address may be mapped to some other address.
               val yarnAddress = properties.getProperty("flink.webui.yarn.address")
               if (!StringUtils.isBlank(yarnAddress)) {
-                this.replacedJMWebUrl = replaceYarnAddress(this.jmWebUrl, yarnAddress)
+                this.jmWebUrl = replaceYarnAddress(this.jmWebUrl, yarnAddress)
               }
             } else {
               this.jmWebUrl = clusterClient.getWebInterfaceURL
