@@ -72,7 +72,7 @@ export class NotebookComponent extends MessageListenersManager implements OnInit
   saveTimer = null;
   interpreterBindings: InterpreterBindingItem[] = [];
   activatedExtension: 'interpreter' | 'permissions' | 'revisions' | 'hide' = 'hide';
-  sidebarWidth = 370;
+  sidebarWidth = 330;
   sidebarAnimationFrame = -1;
   isSidebarOpen = false;
 
@@ -340,8 +340,8 @@ export class NotebookComponent extends MessageListenersManager implements OnInit
     this.cdr.markForCheck();
   }
 
-  onSidebarOpenChange(isSidebarOpen: boolean) {
-    this.isSidebarOpen = isSidebarOpen;
+  toggleSidebar() {
+    this.isSidebarOpen = !this.isSidebarOpen;
   }
 
   onResizeSidebar({ width }: NzResizeEvent): void {
