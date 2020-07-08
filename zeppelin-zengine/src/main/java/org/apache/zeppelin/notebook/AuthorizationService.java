@@ -342,7 +342,7 @@ public class AuthorizationService implements ClusterEventListener {
     if (userAndRoles == null) {
       return false;
     }
-    return isRunner(noteId, userAndRoles);
+    return isReader(noteId, userAndRoles);
   }
 
   public boolean isPublic() {
