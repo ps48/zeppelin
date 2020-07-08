@@ -506,10 +506,8 @@ public class NotebookServer extends WebSocketServlet
         });
   }
 
-  public void broadcastUpdateNoteJobInfo(Note note, long lastUpdateUnixTime) throws IOException {
-    ServiceContext context = new ServiceContext(new AuthenticationInfo(),
-            getNotebookAuthorizationService().getOwners(note.getId()));
-    getJobManagerService().getNoteJobInfoByUnixTime(lastUpdateUnixTime, context,
+  public void broadcastUpdateNoteJobInfo(long lastUpdateUnixTime) throws IOException {
+    getJobManagerService().getNoteJobInfoByUnixTime(lastUpdateUnixTime, null,
         new WebSocketServiceCallback<List<JobManagerService.NoteJobInfo>>(null) {
           @Override
           public void onSuccess(List<JobManagerService.NoteJobInfo> notesJobInfo,
@@ -1801,9 +1799,7 @@ public class NotebookServer extends WebSocketServlet
   @Override
   public void onParagraphRemove(Paragraph p) {
     try {
-      ServiceContext context = new ServiceContext(new AuthenticationInfo(),
-              getNotebookAuthorizationService().getOwners(p.getNote().getId()));
-      getJobManagerService().getNoteJobInfoByUnixTime(System.currentTimeMillis() - 5000, context,
+      getJobManagerService().getNoteJobInfoByUnixTime(System.currentTimeMillis() - 5000, null,
           new JobManagerServiceCallback());
     } catch (IOException e) {
       LOG.warn("can not broadcast for job manager: " + e.getMessage(), e);
@@ -1813,7 +1809,7 @@ public class NotebookServer extends WebSocketServlet
   @Override
   public void onNoteRemove(Note note, AuthenticationInfo subject) {
     try {
-      broadcastUpdateNoteJobInfo(note, System.currentTimeMillis() - 5000);
+      broadcastUpdateNoteJobInfo(System.currentTimeMillis() - 5000);
     } catch (IOException e) {
       LOG.warn("can not broadcast for job manager: " + e.getMessage(), e);
     }
@@ -1922,7 +1918,7 @@ public class NotebookServer extends WebSocketServlet
     p.setStatusToUserParagraph(p.getStatus());
     broadcastParagraph(p.getNote(), p);
     try {
-      broadcastUpdateNoteJobInfo(p.getNote(), System.currentTimeMillis() - 5000);
+      broadcastUpdateNoteJobInfo(System.currentTimeMillis() - 5000);
     } catch (IOException e) {
       LOG.error("can not broadcast for job manager {}", e);
     }
