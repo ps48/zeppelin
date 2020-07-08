@@ -229,10 +229,6 @@ public class InterpreterContext {
     return Double.parseDouble(localProperties.getOrDefault(key, defaultValue + ""));
   }
 
-  public boolean getBooleanLocalProperty(String key, boolean defaultValue) {
-    return Boolean.parseBoolean(localProperties.getOrDefault(key, defaultValue + ""));
-  }
-
   public AuthenticationInfo getAuthenticationInfo() {
     return authenticationInfo;
   }
