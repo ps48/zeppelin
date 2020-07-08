@@ -35,7 +35,7 @@
   <properties>
     <interpreter.name>elasticsearch</interpreter.name>
     <elasticsearch.version>7.8.0</elasticsearch.version>
-    <httpasyncclient.version>4.0.2</httpasyncclient.version>
+    <httpasyncclient.version>4.1.4</httpasyncclient.version>
     <guava.version>18.0</guava.version>
     <json-flattener.version>0.1.6</json-flattener.version>
     <unirest.version>1.4.9</unirest.version>
