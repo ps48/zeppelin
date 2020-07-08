@@ -37,7 +37,7 @@ import java.util.concurrent.ExecutorService;
  */
 public class AngularObject<T> implements JsonSerializable {
   private static final Logger LOGGER = LoggerFactory.getLogger(AngularObject.class);
-  private static final Gson GSON = new Gson();
+  private static final Gson gson = new Gson();
 
   private String name;
   private T object;
@@ -258,10 +258,10 @@ public class AngularObject<T> implements JsonSerializable {
   }
 
   public String toJson() {
-    return GSON.toJson(this);
+    return gson.toJson(this);
   }
 
   public static AngularObject fromJson(String json) {
-    return GSON.fromJson(json, AngularObject.class);
+    return gson.fromJson(json, AngularObject.class);
   }
 }

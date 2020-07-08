@@ -128,7 +128,7 @@ public class HeliumApplicationFactoryTest extends AbstractInterpreterTest {
 
     // clean
     heliumAppFactory.unload(p1, appId);
-    notebook.removeNote(note1, anonymous);
+    notebook.removeNote(note1.getId(), anonymous);
   }
 
   @Test
@@ -165,7 +165,7 @@ public class HeliumApplicationFactoryTest extends AbstractInterpreterTest {
     assertEquals(ApplicationState.Status.UNLOADED, app.getStatus());
 
     // clean
-    notebook.removeNote(note1, anonymous);
+    notebook.removeNote(note1.getId(), anonymous);
   }
 
 
@@ -201,7 +201,7 @@ public class HeliumApplicationFactoryTest extends AbstractInterpreterTest {
     assertEquals(ApplicationState.Status.UNLOADED, app.getStatus());
 
     // clean
-    notebook.removeNote(note1, anonymous);
+    notebook.removeNote(note1.getId(), anonymous);
   }
 
   @Test
@@ -223,7 +223,7 @@ public class HeliumApplicationFactoryTest extends AbstractInterpreterTest {
     }
 
     // remove note
-    notebook.removeNote(note1, anonymous);
+    notebook.removeNote(note1.getId(), anonymous);
   }
 
 
@@ -273,6 +273,6 @@ public class HeliumApplicationFactoryTest extends AbstractInterpreterTest {
     assertEquals(ApplicationState.Status.UNLOADED, app.getStatus());
 
     // clean
-    notebook.removeNote(note1, anonymous);
+    notebook.removeNote(note1.getId(), anonymous);
   }
 }

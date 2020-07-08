@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import org.apache.zeppelin.notebook.Note;
 import org.apache.zeppelin.notebook.NoteEventAsyncListener;
@@ -135,5 +134,5 @@ public abstract class SearchService extends NoteEventAsyncListener {
     }
   }
 
-  public abstract void startRebuildIndex(Stream<Note> notes);
+  public abstract void startRebuildIndex(List<Note> notes);
 }

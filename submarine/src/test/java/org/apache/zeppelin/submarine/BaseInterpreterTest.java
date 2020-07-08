@@ -48,20 +48,20 @@ public abstract class BaseInterpreterTest {
         new AngularObjectRegistryListener() {
 
           @Override
-          public void onAddAngularObject(String interpreterGroupId,
-                                         AngularObject angularObject) {
+          public void onAdd(String interpreterGroupId, AngularObject object) {
             onAdd.incrementAndGet();
           }
 
           @Override
-          public void onUpdateAngularObject(String interpreterGroupId,
-                                            AngularObject angularObject) {
+          public void onUpdate(String interpreterGroupId, AngularObject object) {
             onUpdate.incrementAndGet();
           }
 
           @Override
-          public void onRemoveAngularObject(String interpreterGroupId,
-                                            AngularObject angularObject) {
+          public void onRemove(String interpreterGroupId,
+                               String name,
+                               String noteId,
+                               String paragraphId) {
             onRemove.incrementAndGet();
           }
         });

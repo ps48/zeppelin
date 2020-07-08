@@ -100,8 +100,6 @@ public class RecoveryTest extends AbstractTestRestApi {
 
       // run the paragraph again, but change the text to print variable `user`
       note1 = TestUtils.getInstance(Notebook.class).getNote(note1.getId());
-      Thread.sleep(10 * 1000);
-      note1 = TestUtils.getInstance(Notebook.class).getNote(note1.getId());
       p1 = note1.getParagraph(p1.getId());
       p1.setText("%python print(user)");
       post = httpPost("/notebook/job/" + note1.getId() + "?blocking=true", "");
@@ -114,7 +112,7 @@ public class RecoveryTest extends AbstractTestRestApi {
       throw e;
     } finally {
       if (null != note1) {
-        TestUtils.getInstance(Notebook.class).removeNote(note1, anonymous);
+        TestUtils.getInstance(Notebook.class).removeNote(note1.getId(), anonymous);
       }
     }
   }
@@ -147,7 +145,6 @@ public class RecoveryTest extends AbstractTestRestApi {
       shutDown();
       startUp(RecoveryTest.class.getSimpleName(), false);
 
-      Thread.sleep(5 * 1000);
       // run the paragraph again, but change the text to print variable `user`.
       // can not recover the python interpreter, because it has been shutdown.
       note1 = TestUtils.getInstance(Notebook.class).getNote(note1.getId());
@@ -162,7 +159,7 @@ public class RecoveryTest extends AbstractTestRestApi {
       throw e;
     } finally {
       if (null != note1) {
-        TestUtils.getInstance(Notebook.class).removeNote(note1, anonymous);
+        TestUtils.getInstance(Notebook.class).removeNote(note1.getId(), anonymous);
       }
     }
   }
@@ -192,7 +189,6 @@ public class RecoveryTest extends AbstractTestRestApi {
 
       startUp(RecoveryTest.class.getSimpleName(), false);
 
-      Thread.sleep(5 * 1000);
       // run the paragraph again, but change the text to print variable `user`.
       // can not recover the python interpreter, because it has been shutdown.
       note1 = TestUtils.getInstance(Notebook.class).getNote(note1.getId());
@@ -207,7 +203,7 @@ public class RecoveryTest extends AbstractTestRestApi {
       throw e;
     } finally {
       if (null != note1) {
-        TestUtils.getInstance(Notebook.class).removeNote(note1, anonymous);
+        TestUtils.getInstance(Notebook.class).removeNote(note1.getId(), anonymous);
       }
     }
   }
@@ -252,13 +248,12 @@ public class RecoveryTest extends AbstractTestRestApi {
 
       assertEquals(Job.Status.FINISHED, p1.getStatus());
       assertEquals("hello\n", p1.getReturn().message().get(0).getData());
-      Thread.sleep(5 * 1000);
     } catch (Exception e ) {
       LOG.error(e.toString(), e);
       throw e;
     } finally {
       if (null != note1) {
-        TestUtils.getInstance(Notebook.class).removeNote(note1, anonymous);
+        TestUtils.getInstance(Notebook.class).removeNote(note1.getId(), anonymous);
       }
     }
   }
@@ -275,7 +270,7 @@ public class RecoveryTest extends AbstractTestRestApi {
 
       note1 = TestUtils.getInstance(Notebook.class).createNote("note4", AuthenticationInfo.ANONYMOUS);
 
-      // run  paragraph async, print 'hello' after 10 seconds
+      // run sh paragraph async, print 'hello' after 10 seconds
       Paragraph p1 = note1.addNewParagraph(AuthenticationInfo.ANONYMOUS);
       p1.setText("%python import time\n" +
               "for i in range(1, 10):\n" +
@@ -293,11 +288,9 @@ public class RecoveryTest extends AbstractTestRestApi {
       // shutdown zeppelin and restart it
       shutDown();
       // sleep 15 seconds to make sure the paragraph is finished
-      Thread.sleep(15 * 1000);
+      Thread.sleep(10 * 1500);
 
       startUp(RecoveryTest.class.getSimpleName(), false);
-      // sleep 10 seconds to make sure recovering is finished
-      Thread.sleep(10 * 1000);
 
       assertEquals(Job.Status.FINISHED, p1.getStatus());
       assertEquals("1\n" +
@@ -314,7 +307,7 @@ public class RecoveryTest extends AbstractTestRestApi {
       throw e;
     } finally {
       if (null != note1) {
-        TestUtils.getInstance(Notebook.class).removeNote(note1, anonymous);
+        TestUtils.getInstance(Notebook.class).removeNote(note1.getId(), anonymous);
       }
     }
   }

@@ -341,37 +341,35 @@ public class RemoteInterpreterEventClient implements ResourcePoolConnector,
   }
 
   @Override
-  public synchronized void onAddAngularObject(String interpreterGroupId, AngularObject angularObject) {
+  public synchronized void onAdd(String interpreterGroupId, AngularObject object) {
     try {
       callRemoteFunction(client -> {
-        client.addAngularObject(intpGroupId, angularObject.toJson());
+        client.addAngularObject(intpGroupId, object.toJson());
         return null;
       });
     } catch (Exception e) {
-      LOGGER.warn("Fail to add AngularObject: " + angularObject, e);
+      LOGGER.warn("Fail to add AngularObject: " + object, e);
     }
   }
 
   @Override
-  public void onUpdateAngularObject(String interpreterGroupId, AngularObject angularObject) {
+  public void onUpdate(String interpreterGroupId, AngularObject object) {
     try {
       callRemoteFunction(client -> {
-        client.updateAngularObject(intpGroupId, angularObject.toJson());
+        client.updateAngularObject(intpGroupId, object.toJson());
         return null;
       });
     } catch (Exception e) {
-      LOGGER.warn("Fail to update AngularObject: " + angularObject, e);
+      LOGGER.warn("Fail to update AngularObject: " + object, e);
     }
   }
 
   @Override
-  public void onRemoveAngularObject(String interpreterGroupId, AngularObject angularObject) {
+  public void onRemove(String interpreterGroupId, String name, String noteId,
+                                    String paragraphId) {
     try {
       callRemoteFunction(client -> {
-        client.removeAngularObject(intpGroupId,
-                angularObject.getNoteId(),
-                angularObject.getParagraphId(),
-                angularObject.getName());
+        client.removeAngularObject(intpGroupId, noteId, paragraphId, name);
         return null;
       });
     } catch (Exception e) {
