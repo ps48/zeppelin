@@ -19,7 +19,6 @@ package org.apache.zeppelin.notebook.scheduler;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.zeppelin.interpreter.ExecutionContext;
-import org.apache.zeppelin.interpreter.ExecutionContextBuilder;
 import org.apache.zeppelin.interpreter.InterpreterSetting;
 import org.apache.zeppelin.notebook.Note;
 import org.apache.zeppelin.user.AuthenticationInfo;
@@ -45,20 +44,32 @@ public class CronJob implements org.quartz.Job {
       return;
     }
 
-    String cronExecutingUser = (String) note.getConfig().get("cronExecutingUser");
-    String cronExecutingRoles = (String) note.getConfig().get("cronExecutingRoles");
-    if (null == cronExecutingUser) {
-      cronExecutingUser = "anonymous";
-    }
-    AuthenticationInfo authenticationInfo =
-            new AuthenticationInfo(
-                    cronExecutingUser,
-                    StringUtils.isEmpty(cronExecutingRoles) ? null : cronExecutingRoles,
-                    null);
     try {
-      note.runAll(authenticationInfo, true, true);
-    } catch (Exception e) {
-      LOGGER.warn("Fail to run note: " + note.getName(), e);
+      note.setCronMode(true);
+
+      String cronExecutingUser = (String) note.getConfig().get("cronExecutingUser");
+      String cronExecutingRoles = (String) note.getConfig().get("cronExecutingRoles");
+      if (null == cronExecutingUser) {
+        cronExecutingUser = "anonymous";
+      }
+      AuthenticationInfo authenticationInfo =
+              new AuthenticationInfo(
+                      cronExecutingUser,
+                      StringUtils.isEmpty(cronExecutingRoles) ? null : cronExecutingRoles,
+                      null);
+      try {
+        note.runAll(authenticationInfo, true);
+      } catch (Exception e) {
+        LOGGER.warn("Fail to run note: " + note.getName(), e);
+      }
+
+      LOGGER.info("Releasing interpreters used by this note: " + note.getId());
+      for (InterpreterSetting setting : note.getUsedInterpreterSettings()) {
+          setting.closeInterpreters(new ExecutionContext(cronExecutingUser, note.getId(),
+                  note.getDefaultInterpreterGroup(), true));
+      }
+    } finally {
+      note.setCronMode(false);
     }
   }
 }

@@ -419,7 +419,7 @@ public class NotebookService {
       } else {
         try {
           // run note directly when parameter `paragraphs` is null.
-          note.runAll(context.getAutheInfo(), true, false);
+          note.runAll(context.getAutheInfo(), true);
           return true;
         } catch (Exception e) {
           LOGGER.warn("Fail to run note: " + note.getName(), e);

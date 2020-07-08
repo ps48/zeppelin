@@ -28,8 +28,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.zeppelin.common.JsonSerializable;
 import org.apache.zeppelin.display.AngularObject;
@@ -39,15 +41,17 @@ import org.apache.zeppelin.display.Input;
 import org.apache.zeppelin.helium.HeliumPackage;
 import org.apache.zeppelin.interpreter.Constants;
 import org.apache.zeppelin.interpreter.ExecutionContext;
-import org.apache.zeppelin.interpreter.ExecutionContextBuilder;
 import org.apache.zeppelin.interpreter.Interpreter;
 import org.apache.zeppelin.interpreter.Interpreter.FormType;
 import org.apache.zeppelin.interpreter.InterpreterContext;
 import org.apache.zeppelin.interpreter.InterpreterException;
 import org.apache.zeppelin.interpreter.InterpreterNotFoundException;
+import org.apache.zeppelin.interpreter.InterpreterOutput;
+import org.apache.zeppelin.interpreter.InterpreterOutputListener;
 import org.apache.zeppelin.interpreter.InterpreterResult;
 import org.apache.zeppelin.interpreter.InterpreterResult.Code;
 import org.apache.zeppelin.interpreter.InterpreterResultMessage;
+import org.apache.zeppelin.interpreter.InterpreterResultMessageOutput;
 import org.apache.zeppelin.interpreter.InterpreterSetting;
 import org.apache.zeppelin.interpreter.ManagedInterpreterGroup;
 import org.apache.zeppelin.interpreter.remote.RemoteInterpreter;
@@ -242,15 +246,9 @@ public class Paragraph extends JobWithProgressPoller<InterpreterResult> implemen
   }
 
   public Interpreter getBindedInterpreter() throws InterpreterNotFoundException {
-    ExecutionContext executionContext = new ExecutionContextBuilder()
-            .setUser(user)
-            .setNoteId(note.getId())
-            .setDefaultInterpreterGroup(note.getDefaultInterpreterGroup())
-            .setInIsolatedMode(note.isIsolatedMode())
-            .setStartTime(note.getStartTime())
-            .createExecutionContext();
-
-    return this.note.getInterpreterFactory().getInterpreter(intpText, executionContext);
+    return this.note.getInterpreterFactory().getInterpreter(intpText,
+        new ExecutionContext(user, note.getId(),
+                note.getDefaultInterpreterGroup(), note.isCronMode()));
   }
 
   public void setInterpreter(Interpreter interpreter) {
@@ -634,14 +632,8 @@ public class Paragraph extends JobWithProgressPoller<InterpreterResult> implemen
 
   public boolean isValidInterpreter(String replName) {
     try {
-      ExecutionContext executionContext = new ExecutionContextBuilder()
-              .setUser(user)
-              .setNoteId(note.getId())
-              .setDefaultInterpreterGroup(note.getDefaultInterpreterGroup())
-              .setInIsolatedMode(note.isIsolatedMode())
-              .setStartTime(note.getStartTime())
-              .createExecutionContext();
-      return note.getInterpreterFactory().getInterpreter(replName, executionContext) != null;
+      return note.getInterpreterFactory().getInterpreter(replName,
+              new ExecutionContext(user, note.getId(), note.getDefaultInterpreterGroup())) != null;
     } catch (InterpreterNotFoundException e) {
       return false;
     }
@@ -758,11 +750,11 @@ public class Paragraph extends JobWithProgressPoller<InterpreterResult> implemen
 
   @Override
   public String toJson() {
-    return Note.getGSON().toJson(this);
+    return Note.getGson().toJson(this);
   }
 
   public static Paragraph fromJson(String json) {
-    return Note.getGSON().fromJson(json, Paragraph.class);
+    return Note.getGson().fromJson(json, Paragraph.class);
   }
 
   public void updateOutputBuffer(int index, InterpreterResult.Type type, String output) {

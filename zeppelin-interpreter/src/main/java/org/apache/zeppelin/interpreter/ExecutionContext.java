@@ -17,26 +17,26 @@
 
 package org.apache.zeppelin.interpreter;
 
-/**
- * Context info about running interpreter. This is used for deciding which interpreter binding
- * mode to use.
- */
 public class ExecutionContext {
 
   private final String user;
   private final String noteId;
   private final String defaultInterpreterGroup;
-  private final boolean inIsolatedMode;
-  // When is the execution triggered, e.g. when the cron job is triggered or when the rest api is triggered.
-  private final String startTime;
+  private final boolean inCronMode;
 
-  public ExecutionContext(String user, String noteId, String defaultInterpreterGroup,
-                          boolean inIsolatedMode, String startTime) {
+  public ExecutionContext(String user, String noteId) {
+    this(user, noteId, "", false);
+  }
+
+  public ExecutionContext(String user, String noteId, String defaultInterpreterGroup) {
+    this(user, noteId, defaultInterpreterGroup, false);
+  }
+
+  public ExecutionContext(String user, String noteId, String defaultInterpreterGroup, boolean inCronMode) {
     this.user = user;
     this.noteId = noteId;
     this.defaultInterpreterGroup = defaultInterpreterGroup;
-    this.inIsolatedMode = inIsolatedMode;
-    this.startTime = startTime;
+    this.inCronMode = inCronMode;
   }
 
   public String getUser() {
@@ -51,12 +51,8 @@ public class ExecutionContext {
     return defaultInterpreterGroup;
   }
 
-  public boolean isInIsolatedMode() {
-    return inIsolatedMode;
-  }
-
-  public String getStartTime() {
-    return startTime;
+  public boolean isInCronMode() {
+    return inCronMode;
   }
 
   @Override
@@ -65,8 +61,7 @@ public class ExecutionContext {
             "user='" + user + '\'' +
             ", noteId='" + noteId + '\'' +
             ", defaultInterpreterGroup='" + defaultInterpreterGroup + '\'' +
-            ", inIsolatedMode=" + inIsolatedMode +
-            ", startTime=" + startTime +
+            ", inCronMode=" + inCronMode +
             '}';
   }
 }

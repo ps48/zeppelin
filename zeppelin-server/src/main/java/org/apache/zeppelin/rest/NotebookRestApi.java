@@ -27,7 +27,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.DELETE;
@@ -43,10 +42,7 @@ import javax.ws.rs.core.Response.Status;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.zeppelin.annotation.ZeppelinApi;
 import org.apache.zeppelin.conf.ZeppelinConfiguration;
-import org.apache.zeppelin.interpreter.ExecutionContext;
-import org.apache.zeppelin.interpreter.ExecutionContextBuilder;
 import org.apache.zeppelin.interpreter.InterpreterResult;
-import org.apache.zeppelin.interpreter.InterpreterSetting;
 import org.apache.zeppelin.notebook.Note;
 import org.apache.zeppelin.notebook.NoteInfo;
 import org.apache.zeppelin.notebook.Notebook;
@@ -63,7 +59,6 @@ import org.apache.zeppelin.rest.message.NewParagraphRequest;
 import org.apache.zeppelin.rest.message.RenameNoteRequest;
 import org.apache.zeppelin.rest.message.RunParagraphWithParametersRequest;
 import org.apache.zeppelin.rest.message.UpdateParagraphRequest;
-import org.apache.zeppelin.scheduler.ExecutorFactory;
 import org.apache.zeppelin.search.SearchService;
 import org.apache.zeppelin.server.JsonResponse;
 import org.apache.zeppelin.service.AuthenticationService;
@@ -655,8 +650,6 @@ public class NotebookRestApi extends AbstractRestApi {
    * Run note jobs REST API.
    *
    * @param noteId ID of Note
-   * @param blocking blocking until jobs are done
-   * @param isolated use isolated interpreter for running this note
    * @return JSON with status.OK
    * @throws IOException
    * @throws IllegalArgumentException
@@ -665,31 +658,23 @@ public class NotebookRestApi extends AbstractRestApi {
   @Path("job/{noteId}")
   @ZeppelinApi
   public Response runNoteJobs(@PathParam("noteId") String noteId,
-                              @QueryParam("blocking") Boolean blocking,
-                              @QueryParam("isolated") Boolean isolated)
+                              @QueryParam("waitToFinish") Boolean waitToFinish)
       throws IOException, IllegalArgumentException {
-    if (blocking == null) {
-      blocking = false;
-    }
-    if (isolated == null) {
-      isolated = false;
-    }
-
-    LOG.info("Run note jobs, noteId: {} blocking: {}, isolated: {}", noteId, blocking, isolated);
+    boolean blocking = waitToFinish == null || waitToFinish;
+    LOG.info("run note jobs {} waitToFinish: {}", noteId, blocking);
     Note note = notebook.getNote(noteId);
     AuthenticationInfo subject = new AuthenticationInfo(authenticationService.getPrincipal());
     subject.setRoles(new LinkedList<>(authenticationService.getAssociatedRoles()));
     checkIfNoteIsNotNull(note);
     checkIfUserCanRun(noteId, "Insufficient privileges you cannot run job for this note");
 
-    //TODO(zjffdu), can we run a note via rest api when cron is enabled ?
     try {
-      note.runAll(subject, blocking, isolated);
-      return new JsonResponse<>(Status.OK).build();
+      note.runAll(subject, blocking);
     } catch (Exception ex) {
       LOG.error("Exception from run", ex);
       return new JsonResponse<>(Status.EXPECTATION_FAILED, ex.getMessage()).build();
     }
+    return new JsonResponse<>(Status.OK).build();
   }
 
   /**
