@@ -37,6 +37,7 @@
     <properties>
         <elasticsearch.client.version>7.8.0</elasticsearch.client.version>
         <plugin.name>NotebookRepo/ODFENotebookRepo</plugin.name>
+	<enforcer.skip>true</enforcer.skip>
     </properties>
 
     <dependencies>
